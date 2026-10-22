@@ -219,10 +219,24 @@ A ready-built file is in [`source/output/canbridgeWith_60_80_Switch_Input.srec`]
 (the default 80 % / 60 % setpoints). It's the build tested on hardware. Later revisions only
 changed comments, so the code is the same.
 
-**Flash it with `BridgeFlasher.exe` from the
-[upstream repo](https://github.com/dalathegreat/Nissan-LEAF-Battery-Upgrade), not with ST-Link
-directly.** Follow the upstream README for the ST-Link setup and wiring. BridgeFlasher needs the
-**CLI** version of the ST-Link tool (`ST-LINK_CLI.exe`, part of STM32 ST-LINK Utility).
+**Flash it with [`source/BridgeFlasher.exe`](source/), not with ST-Link directly.**
+
+- BridgeFlasher is **dalathegreat's tool**, included here for convenience. It's byte-for-byte
+  identical to the copy in the
+  [upstream repo](https://github.com/dalathegreat/Nissan-LEAF-Battery-Upgrade) (SHA-256
+  `29ba6950f71ce5d1e496cb6b8d102bf2c70c364bc484c8e2e1ddc476e2fedb1a`).
+- Keep `BridgeFlasher.exe.config` in the same folder as the `.exe`.
+- It needs the **.NET Framework 4.8** and the **CLI** version of the ST-Link tool
+  (`ST-LINK_CLI.exe`, part of STM32 ST-LINK Utility).
+- Follow the upstream README for the ST-Link setup and wiring.
+
+**To flash:**
+1. Run `BridgeFlasher.exe`.
+2. Select `ST-LINK_CLI.exe`.
+3. Select the `.srec` file.
+4. Press **Flash!**
+
+Windows may warn about an unknown publisher the first time you run it.
 
 **Why it has to be BridgeFlasher (board lock):** the firmware checks the STM32's factory unique
 chip ID at boot and keeps resetting if it doesn't match the 12 bytes stored in the firmware
@@ -253,7 +267,8 @@ will reset forever on boot.
 GPL-3.0. See [`LICENSE`](LICENSE). This is a modified version of
 [dalathegreat/Nissan-LEAF-Battery-Upgrade](https://github.com/dalathegreat/Nissan-LEAF-Battery-Upgrade).
 The STM32 HAL/CMSIS files under `source/Drivers/` are © STMicroelectronics / Arm under their own
-licences (included in those folders).
+licences (included in those folders). `source/BridgeFlasher.exe` is redistributed unchanged
+from the upstream project.
 
 This modifies high-voltage battery messages on a vehicle CAN bus. It comes with **no warranty**,
 and you use it at your own risk.

@@ -14,7 +14,3 @@ source/MDK-ARM/Listings/
 
 # Keil per-user window layout
 *.uvguix.*
-
-# Flasher binaries (get BridgeFlasher.exe from the upstream repo)
-*.exe
-*.exe.config
