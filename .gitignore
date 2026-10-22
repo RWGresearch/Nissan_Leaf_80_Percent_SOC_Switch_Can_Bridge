@@ -1,0 +1,20 @@
+# Keil build output
+source/MDK-ARM/jcan/
+source/MDK-ARM/Objects/
+source/MDK-ARM/Listings/
+*.o
+*.d
+*.axf
+*.map
+*.lnp
+*.dep
+*.lst
+*.htm
+*.build_log.htm
+
+# Keil per-user window layout
+*.uvguix.*
+
+# Flasher binaries (get BridgeFlasher.exe from the upstream repo)
+*.exe
+*.exe.config
