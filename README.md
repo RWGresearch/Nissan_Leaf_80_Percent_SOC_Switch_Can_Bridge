@@ -16,6 +16,25 @@ that project. Read the upstream README for the hardware, install and wiring of t
 
 ---
 
+## Why charge to 80 %?
+
+- **Charging to 100 % is fine if you'll be driving soon afterwards.** What wears a lithium-ion
+  battery faster is **sitting at a high state of charge** for long periods, e.g. charged to
+  100 % and then parked for days.
+- **Most people don't use the full 100 %-to-0 % range day to day.** If your normal driving fits
+  comfortably in 80 %, charging to 80 % and leaving the battery there is an easy way to help it
+  last longer.
+- **Switch to 100 % before a long trip** when you need the extra range. Flip the switch back
+  afterwards.
+
+> **⚠️ DO charge to 100 % at least once a month.** A full charge lets the battery management
+> system (BMS) balance the cells and recalibrate its state-of-charge and capacity estimates.
+> Without it, the SOC/range readings can drift and the cells can drift out of balance. Put the
+> switch in the centre (100 %) position, let it charge fully, and ideally leave it plugged in a
+> while after it reports full so balancing can finish.
+
+---
+
 ## Use your existing battery-upgrade CAN-bridge
 
 This runs on **the same 2-port CAN-bridge board that is already used for LEAF battery upgrades**.
