@@ -6,8 +6,45 @@ hardware switch that sets where AC charging stops: **100 %, 80 % or 60 %**.
 This is a modified version of the CANBRIDGE-2port firmware from
 **[dalathegreat/Nissan-LEAF-Battery-Upgrade](https://github.com/dalathegreat/Nissan-LEAF-Battery-Upgrade)**,
 licensed GPL-3.0. All credit for the original bridge firmware, flasher and install guide goes to
-that project. Everything except the charge limit works exactly as in the original. Read the
-upstream README for hardware, install and wiring of the bridge itself.
+that project. Read the upstream README for the hardware, install and wiring of the bridge itself.
+
+## Video
+
+[![Watch the install and demo video on YouTube](https://img.youtube.com/vi/3inqoUJ95z8/hqdefault.jpg)](https://youtu.be/3inqoUJ95z8)
+
+▶ <https://youtu.be/3inqoUJ95z8>
+
+---
+
+## Use your existing battery-upgrade CAN-bridge
+
+This runs on **the same 2-port CAN-bridge board that is already used for LEAF battery upgrades**.
+You don't need new bridge hardware. The bridge does the same job as before. This firmware just
+adds a switch on the board's spare input pads to choose the charge limit:
+
+1. Solder the switch to the board's input pads (see [Switch wiring](#switch-wiring)).
+2. Flash this firmware with BridgeFlasher, in place of the upstream firmware (see [Flashing](#flashing)).
+3. Install the bridge exactly as the upstream guide describes.
+
+With no switch fitted, or the switch in the centre, the bridge behaves like the original firmware
+and charges to 100 %.
+
+### How this compares with the upstream firmware
+
+Be clear about what you're replacing:
+
+- **Base version:** this firmware is built on upstream commit
+  [`4697560`](https://github.com/dalathegreat/Nissan-LEAF-Battery-Upgrade/commit/4697560c93)
+  (2024-06-06). Apart from the changes listed below, `can.c`, `main.c`, `gpio.c` and the CAN
+  bridge logic are the same as that commit.
+- **Added by this project:** the charge-limit switch (rev 0002), plus comments only (rev 0003/0004).
+- **Also added in this base (not in upstream):** a `0x1C2` message, the ZE1 "second processor"
+  counter, cycling 0x50–0x5F. It's sent on both CAN buses each time a `0x1F2` message is received.
+  It was already in the firmware this project started from, and it's included in the tested build.
+- **Not included:** three later upstream commits (June 2024 and May 2026), all aimed at **2011–2013
+  ZE0** cars. They add `0x390`/`0x393` PDM messages towards the battery (P3196) and a
+  no-charging workaround for the ZE0 instrument-cluster fix. If you have a ZE0 car and rely on
+  those fixes, compare with the current upstream before switching.
 
 ---
 
@@ -17,7 +54,7 @@ The full change history is at the top of [`source/Src/can-bridge-firmware.c`](so
 
 | Rev  | Change |
 |------|--------|
-| 0001 | Original unmodified firmware (baseline) |
+| 0001 | Firmware as received (baseline, see [above](#how-this-compares-with-the-upstream-firmware)) |
 | 0002 | **Selectable AC charge limit** read from input pins Inp1 and Inp2 |
 | 0003 | Comments only: PCB silkscreen labels for the input pins |
 | 0004 | Comments only: confirmed working on hardware; explained the board lock (see [Flashing](#flashing)) |
@@ -69,8 +106,41 @@ Use a **3-position ON-OFF-ON (SPDT, centre off) toggle switch**:
    lever CENTRE = nothing connected = 100 %
 ```
 
-- The **centre (common) terminal goes to the board's ground (GND)**. The two outer terminals go
-  to Inp1 and Inp2.
+### Only want 80 %? Use a simple on/off switch
+
+If you only need the 80 % limit, you don't need the 3-position switch. Use a plain **2-terminal
+ON-OFF (SPST) toggle switch** and wire just one input:
+
+```
+   Simple ON-OFF switch (2 terminals)
+
+   Inp1 (unmarked) ──── terminal 1
+   board GND ────────── terminal 2
+
+   switch ON  = Inp1 grounded = stop at 80 %
+   switch OFF = open          = 100 % (normal)
+```
+
+- Leave **Inp2 (W222) unconnected**. Its internal pull-up keeps it inactive, so 60 % is never
+  selected.
+- To get only the 60 % limit instead, wire the switch to **Inp2 (W222)** and leave Inp1 open.
+- The firmware is the same either way. Nothing needs to be rebuilt.
+
+### Solder points on the board
+
+![Bridge board solder points: input pads and ground bar](Inputs.jpeg)
+
+The input pads sit in a row beside the silkscreen labels (red arrow). The **ground bar** runs
+along next to them (black arrow). In the photo the **brown** wire goes to the ground bar, and
+the **yellow** and **red** wires go to the two input pads.
+
+### The switch
+
+![3-position ON-OFF-ON toggle switch wired up](Switch.jpeg)
+
+The **brown (ground) wire goes to the centre terminal**. The yellow and red wires (the two
+inputs) go to the outer terminals.
+
 - On most toggle switches, pushing the lever **up** connects the **bottom** outer terminal.
   Check with a meter and swap the two outer wires if up and down are the wrong way round.
 - The inputs have internal pull-ups, so no resistors are needed. Open = high = inactive.
@@ -96,10 +166,39 @@ needs to be connected to Inp3 or Inp4.
 
 ---
 
+## Changing the 80 % / 60 % setpoints
+
+To stop at different percentages, edit these lines near the top of
+[`source/Src/can-bridge-firmware.c`](source/Src/can-bridge-firmware.c) (about line 105):
+
+```c
+#define CHARGE_LIMIT_100_PPTT       1000    // no limit, bridge does not interfere
+#define CHARGE_LIMIT_80_PPTT        800     // Input 1 pulled low
+#define CHARGE_LIMIT_60_PPTT        600     // Input 2 pulled low
+#define CHARGE_LIMIT_HYST_PPTT      30      // latch releases 3.0% below the setpoint
+```
+
+- Values are in **tenths of a percent**: `800` = 80.0 %, `750` = 75.0 %, `900` = 90.0 %.
+- **Switch UP (Inp1)** uses `CHARGE_LIMIT_80_PPTT`. **Switch DOWN (Inp2)** uses
+  `CHARGE_LIMIT_60_PPTT`. You only need to change the number; the name stays the same even if
+  the value isn't 80 or 60 any more.
+- Keep both values **below 1000**. Leave `CHARGE_LIMIT_100_PPTT` at `1000`, because that's what
+  makes the centre position mean "don't interfere".
+- `CHARGE_LIMIT_HYST_PPTT` sets how far SOC must drop below the setpoint before the latch
+  releases. `30` = 3.0 %.
+- If both inputs are grounded, the Inp2 value is used.
+- These values are compared with the battery's **real** SOC, not the dash SOC (see above).
+
+Then rebuild (see [Building from source](#building-from-source)) and flash the new `.srec` with
+BridgeFlasher.
+
+---
+
 ## Flashing
 
-A ready-built file is in [`source/output/canbridgeWith_60_80_Switch_Input.srec`](source/output/).
-It's the build tested on hardware. Later revisions only changed comments, so the code is the same.
+A ready-built file is in [`source/output/canbridgeWith_60_80_Switch_Input.srec`](source/output/)
+(the default 80 % / 60 % setpoints). It's the build tested on hardware. Later revisions only
+changed comments, so the code is the same.
 
 **Flash it with `BridgeFlasher.exe` from the
 [upstream repo](https://github.com/dalathegreat/Nissan-LEAF-Battery-Upgrade), not with ST-Link
